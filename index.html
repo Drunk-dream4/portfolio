@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" type="image/png" href="icons8-照片栈-80.png">
+    <meta charset="UTF-8">
+    <!-- 移动端适配核心标签，必须保留 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的摄影作品集</title>
+    <style>
+        /* ========== 全局主题配置区（你可以在这里修改颜色、间距等） ========== */
+        :root {
+            --bg-color: #f8f8f8; /* 页面背景色（浅灰不刺眼） */
+            --text-color: #222222; /* 主文字色 */
+            --light-text: #666666; /* 次要文字色 */
+            --accent-color: #333333; /* 强调色（按钮、边框） */
+            --white: #ffffff; /* 卡片白色 */
+            --gap: 20px; /* 照片之间的间距 */
+            --border-radius: 4px; /* 圆角大小（0就是直角） */
+        }
+
+        /* ========== 全局重置（不用修改） ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        /* ========== 头部标题区（可以修改文字内容） ========== */
+        header {
+            text-align: center;
+            padding: 80px 20px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--light-text);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ========== 核心：照片网格布局（自动适配电脑/手机） ========== */
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--gap);
+            /* 响应式网格：电脑自动多列，手机自动1-2列 */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: var(--gap);
+        }
+
+        /* 照片卡片样式 */
+        .photo-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        /* 鼠标悬浮效果（电脑端） */
+        .photo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        /* 照片图片样式 */
+        .photo-card img {
+            width: 100%;
+            height: 380px; /* 照片卡片固定高度，保证整齐 */
+            object-fit: cover; /* 裁剪图片不变形 */
+            display: block;
+            /* 懒加载优化 */
+            loading: lazy;
+        }
+
+        /* 照片标题/描述 */
+        .photo-info {
+            padding: 16px;
+        }
+
+        .photo-info h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .photo-info p {
+            font-size: 0.9rem;
+            color: var(--light-text);
+        }
+
+        /* ========== 大图预览灯箱（点击照片弹出） ========== */
+        #lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.92);
+            display: none;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* 灯箱显示状态 */
+        #lightbox.active {
+            display: flex;
+        }
+
+        /* 灯箱里的大图 */
+        #lightbox-img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: var(--border-radius);
+        }
+
+        /* 关闭按钮 */
+        #lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #lightbox-close:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* ========== 页脚 ========== */
+        footer {
+            text-align: center;
+            padding: 60px 20px 20px;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        /* ========== 移动端适配优化 ========== */
+        @media (max-width: 768px) {
+            header {
+                padding: 40px 20px 30px;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .gallery-container {
+                grid-template-columns: 1fr; /* 手机端单列显示 */
+            }
+
+            .photo-card img {
+                height: 280px; /* 手机端照片高度缩小 */
+            }
+
+            #lightbox-close {
+                top: 16px;
+                right: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 页面头部：标题和简介 -->
+    <header>
+        <h1>我的摄影作品集</h1>
+        <p>用镜头记录世界的光影与瞬间</p>
+    </header>
+
+    <!-- 照片网格容器：JS会自动在这里生成照片卡片，不用手动修改 -->
+    <main class="gallery-container" id="gallery"></main>
+
+    <!-- 大图预览灯箱：点击照片弹出，不用手动修改 -->
+    <div id="lightbox">
+        <button id="lightbox-close">×</button>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <!-- 页脚 -->
+    <footer>
+        © 2026 我的摄影作品集 | All Rights Reserved
+    </footer>
+
+    <script>
+        // ==============================================
+        // ========== 【唯一需要你修改的地方】==========
+        // 加照片只需要往下面的photos数组里加对象即可
+        // 格式：{ src: "照片地址", title: "照片标题", desc: "照片描述" }
+        // 照片地址可以是本地文件名（和html文件同文件夹），也可以是在线图片链接
+        // ==============================================
+        const photos = [
+            {
+                src: "photo/3月15日(1).jpg",
+                title: "春日随拍",
+                desc: "3月15日拍摄记录"
+            },
+            {
+                src: "photo/3月15日(3).jpg",
+                title: "春日随拍",
+                desc: "3月15日拍摄记录"
+            },
+            {
+                src: "photo/3月15日(5).jpg",
+                title: "春日随拍",
+                desc: "3月15日拍摄记录"
+            },
+            {
+                src: "photo/3月15日.jpg",
+                title: "春日随拍",
+                desc: "3月15日拍摄记录"
+            },
+            {
+                src: "photo/DSC00441.jpg",
+                title: "建筑摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC01179.jpg",
+                title: "风光摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC01204.jpg",
+                title: "风光摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC01208.jpg",
+                title: "建筑摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC01829.jpg",
+                title: "建筑摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC01831.jpg",
+                title: "建筑摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC02745.jpg",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC02762.jpg",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC02767.jpg",
+                title: "风光摄影",
+                desc: "纪实风光随拍"
+            },
+            {
+                src: "photo/DSC02786.jpg",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC02788.jpg",
+                title: "器材记录",
+                desc: "摄影器材随拍"
+            },
+            {
+                src: "photo/DSC02790.jpg",
+                title: "器材记录",
+                desc: "摄影器材随拍"
+            },
+            {
+                src: "photo/DSC03417.jpg",
+                title: "人文随拍",
+                desc: "日常纪实记录"
+            },
+            {
+                src: "photo/DSC03424.jpg",
+                title: "人文随拍",
+                desc: "日常纪实记录"
+            },
+            {
+                src: "photo/DSC03552_1.JPG",
+                title: "花卉摄影",
+                desc: "创意花卉拍摄"
+            },
+            {
+                src: "photo/DSC03555.JPG",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC03561.JPG",
+                title: "花卉摄影",
+                desc: "创意花卉拍摄"
+            },
+            {
+                src: "photo/DSC03563.JPG",
+                title: "花卉摄影",
+                desc: "创意花卉拍摄"
+            },
+            {
+                src: "photo/DSC03586.jpg",
+                title: "人文随拍",
+                desc: "日常纪实记录"
+            },
+            {
+                src: "photo/DSC03600.JPG",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC03616.JPG",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC03659.jpg",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC03681_1.JPG",
+                title: "烟花摄影",
+                desc: "夜景烟花记录"
+            },
+            {
+                src: "photo/DSC03684.JPG",
+                title: "烟花摄影",
+                desc: "夜景烟花记录"
+            },
+            {
+                src: "photo/DSC03710.JPG",
+                title: "星空摄影",
+                desc: "夜景星空记录"
+            },
+            {
+                src: "photo/DSC03850.jpg",
+                title: "日落摄影",
+                desc: "黄昏日落记录"
+            },
+            {
+                src: "photo/DSC03852.jpg",
+                title: "日落摄影",
+                desc: "黄昏日落记录"
+            },
+            {
+                src: "photo/DSC03862_1.jpg",
+                title: "日落摄影",
+                desc: "黄昏日落记录"
+            },
+            {
+                src: "photo/DSC04000(1).JPG",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC04000.JPG",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC04001(1).JPG",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC04001.JPG",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC04016(1).JPG",
+                title: "交通纪实",
+                desc: "列车纪实拍摄"
+            },
+            {
+                src: "photo/DSC04016.JPG",
+                title: "交通纪实",
+                desc: "列车纪实拍摄"
+            },
+            {
+                src: "photo/DSC04018_1.jpg",
+                title: "风光摄影",
+                desc: "山野风光记录"
+            },
+            {
+                src: "photo/DSC04023.jpg",
+                title: "风光摄影",
+                desc: "草坪风光记录"
+            },
+            {
+                src: "photo/DSC04064.jpg",
+                title: "花卉摄影",
+                desc: "春日花卉记录"
+            },
+            {
+                src: "photo/DSC04076_1.JPG",
+                title: "萌宠记录",
+                desc: "日常萌宠随拍"
+            },
+            {
+                src: "photo/DSC04092.jpg",
+                title: "风光摄影",
+                desc: "湖面风光记录"
+            },
+            {
+                src: "photo/DSC04263.jpg",
+                title: "人文纪实",
+                desc: "日常人文记录"
+            },
+            {
+                src: "photo/DSC04353(1).jpg",
+                title: "风光摄影",
+                desc: "湖面日落记录"
+            },
+            {
+                src: "photo/DSC04374.jpg",
+                title: "风光摄影",
+                desc: "湖面日落记录"
+            },
+            {
+                src: "photo/DSC04376.jpg",
+                title: "风光摄影",
+                desc: "湖面日落记录"
+            },
+            {
+                src: "photo/DSC04386(1).jpg",
+                title: "风光摄影",
+                desc: "原野风光记录"
+            },
+            {
+                src: "photo/DSC04664.jpg",
+                title: "建筑摄影",
+                desc: "校园风光记录"
+            },
+            {
+                src: "photo/DSC04682.jpg",
+                title: "建筑摄影",
+                desc: "校园风光记录"
+            },
+            {
+                src: "photo/DSC04696.jpg",
+                title: "建筑摄影",
+                desc: "红旗风光记录"
+            },
+            {
+                src: "photo/DSC04698.jpg",
+                title: "建筑摄影",
+                desc: "红旗风光记录"
+            },
+            {
+                src: "photo/DSC08377.jpg",
+                title: "器材记录",
+                desc: "摄影器材随拍"
+            },
+            {
+                src: "photo/DSC08378.jpg",
+                title: "器材记录",
+                desc: "摄影器材随拍"
+            },
+            {
+                src: "photo/DSC08486(1).jpg",
+                title: "人文纪实",
+                desc: "城市剪影记录"
+            },
+            {
+                src: "photo/DSC08606.jpg",
+                title: "风光摄影",
+                desc: "越野车辆随拍"
+            },
+            {
+                src: "photo/DSC08661.jpg",
+                title: "植物摄影",
+                desc: "春日植物记录"
+            },
+            {
+                src: "photo/DSC08692_1.jpg",
+                title: "风光摄影",
+                desc: "晚霞风光记录"
+            },
+            {
+                src: "photo/MVIMG_20251113_082524.jpg",
+                title: "蓝天",
+                desc: "2025年11月13日的早八"
+            }
+            
+        ];
+
+        // ==============================================
+        // ========== 以下代码不用修改 ==========
+        // ==============================================
+        // 获取DOM元素
+        const gallery = document.getElementById('gallery');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxClose = document.getElementById('lightbox-close');
+
+        // 动态生成照片卡片
+        function renderGallery() {
+            // 清空容器
+            gallery.innerHTML = '';
+            // 遍历照片数组，生成每个卡片
+            photos.forEach((photo, index) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                card.dataset.index = index; // 记录照片索引
+                // 卡片HTML结构
+                card.innerHTML = `
+                    <img src="${photo.src}" alt="${photo.title}">
+                    <div class="photo-info">
+                        <h3>${photo.title}</h3>
+                        <p>${photo.desc}</p>
+                    </div>
+                `;
+                // 点击卡片打开灯箱
+                card.addEventListener('click', () => {
+                    openLightbox(photo.src);
+                });
+                // 添加到网格容器
+                gallery.appendChild(card);
+            });
+        }
+
+        // 打开灯箱（大图预览）
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.classList.add('active');
+            // 禁止页面滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭灯箱
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            // 恢复页面滚动
+            document.body.style.overflow = 'auto';
+        }
+
+        // 关闭按钮点击事件
+        lightboxClose.addEventListener('click', closeLightbox);
+
+        // 点击灯箱黑色背景关闭
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+
+        // 键盘ESC键关闭灯箱
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+
+        // 页面加载完成后渲染照片
+        window.addEventListener('DOMContentLoaded', renderGallery);
+    </script>
+</body>
+</html>
