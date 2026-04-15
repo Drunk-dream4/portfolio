@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <link rel="icon" type="image/png" href="../icons8-照片栈-80.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>光影集 · 摄影作品</title>
+    <style>
+        /* ========== 全局通用变量（和主题无关，永远生效） ========== */
+        :root {
+            /* 布局系统 - 全局通用，主题切换不改变 */
+            --gap: 20px;
+            --gap-sm: 12px;
+            --border-radius: 8px;
+            --border-radius-lg: 48px;
+            --border-radius-sm: 4px;
+            
+            /* 阴影系统 - 全局通用 */
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-hover: 0 12px 28px rgba(0,0,0,0.12);
+            --shadow-lightbox: 0 10px 30px rgba(0,0,0,0.5);
+            
+            /* 动画系统 - 全局通用 */
+            --transition-fast: all 0.2s ease;
+            --transition-normal: all 0.3s ease;
+            --transition-slow: all 0.4s ease;
+            
+            /* 响应式断点 - 固定数值，媒体查询不支持CSS变量 */
+            --breakpoint-sm: 600px;
+            --breakpoint-md: 768px;
+            --breakpoint-lg: 1400px;
+        }
+
+        /* ========== 浅色主题 - 仅色彩变量 ========== */
+        :root[data-theme="light"] {
+            --bg-color: #f8f8f8;
+            --header-bg: #f8f8f8;
+            --card-bg: #ffffff;
+            --text-color: #222222;
+            --light-text: #666666;
+            --accent-color: #333333;
+            --white: #ffffff;
+            --border-color: #ddd;
+            --skeleton-bg: #eaeaea;
+            --skeleton-highlight: #f5f5f5;
+            --filter-bar-bg: rgba(255,255,255,0.9);
+            --btn-bg: rgba(255,255,255,0.6);
+        }
+
+        /* ========== 深色主题 - 仅色彩变量，布局变量全局通用，不会丢失 ========== */
+        :root[data-theme="dark"] {
+            --bg-color: #0f0f0f;
+            --header-bg: #0f0f0f;
+            --card-bg: #1a1a1a;
+            --text-color: #f0f0f0;
+            --light-text: #aaaaaa;
+            --accent-color: #ffffff;
+            --white: #1a1a1a;
+            --border-color: #333333;
+            --skeleton-bg: #252525;
+            --skeleton-highlight: #303030;
+            --filter-bar-bg: rgba(26,26,26,0.95);
+            --btn-bg: rgba(40,40,40,0.8);
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-hover: 0 12px 28px rgba(0,0,0,0.5);
+        }
+
+        /* ========== 基础重置 & 通用样式 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            transition: background-color var(--transition-normal);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 40px;
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+        }
+
+        /* 无障碍隐藏 */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        /* 禁用过渡（拖拽时使用，避免卡顿） */
+        .no-transition {
+            transition: none !important;
+        }
+
+        /* 骨架屏动画 */
+        @keyframes skeleton-loading {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        /* ========== 头部 - 布局固定，主题仅改颜色 ========== */
+        .header {
+            text-align: center;
+            padding: 60px var(--gap-sm) 30px;
+            max-width: var(--breakpoint-lg);
+            margin: 0 auto;
+            position: relative;
+            background-color: var(--header-bg);
+            transition: background-color var(--transition-normal);
+            width: 100%;
+        }
+
+        .header__title {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 500;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .header__desc {
+            font-size: 1rem;
+            color: var(--light-text);
+        }
+
+        /* 主题切换按钮 - 布局固定，主题仅改颜色 */
+        .theme-toggle {
+            position: absolute;
+            top: 50%;
+            right: var(--gap);
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--btn-bg);
+            color: var(--text-color);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-fast);
+            backdrop-filter: blur(4px);
+            outline: none;
+            z-index: 100;
+        }
+
+        .theme-toggle:hover,
+        .theme-toggle:focus-visible {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ========== 分类筛选栏 - 布局固定，主题仅改颜色 ========== */
+        .filter-section {
+            max-width: var(--breakpoint-lg);
+            margin: 0 auto var(--gap-sm);
+            padding: 0 var(--gap);
+            width: 100%;
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 12px;
+            background: var(--filter-bar-bg);
+            padding: 14px 20px;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(4px);
+            transition: background-color var(--transition-normal);
+        }
+
+        .filter-btn {
+            background: var(--btn-bg);
+            border: 1px solid var(--border-color);
+            color: var(--light-text);
+            font-size: 0.9rem;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 450;
+            transition: var(--transition-fast);
+            backdrop-filter: blur(2px);
+            outline: none;
+            flex-shrink: 0;
+        }
+
+        .filter-btn:hover,
+        .filter-btn:focus-visible {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            color: var(--bg-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .photo-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            padding: 0 8px;
+            flex-shrink: 0;
+        }
+
+        /* ========== 照片网格 - 布局固定，主题仅改颜色 ========== */
+        .gallery-container {
+            max-width: var(--breakpoint-lg);
+            margin: 0 auto;
+            padding: 0 var(--gap);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--gap);
+            width: 100%;
+        }
+
+        .photo-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-normal);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            outline: none;
+            border: 2px solid transparent;
+        }
+
+        .photo-card:hover,
+        .photo-card:focus-visible {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+            border-color: rgba(51,51,51,0.1);
+        }
+
+        .photo-card__img-wrapper {
+            width: 100%;
+            height: 300px;
+            background: var(--skeleton-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 图片骨架屏 */
+        .photo-card__skeleton {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--skeleton-bg), var(--skeleton-highlight), var(--skeleton-bg));
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .photo-card__img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity var(--transition-normal);
+            opacity: 0;
+        }
+
+        .photo-card__img.loaded {
+            opacity: 1;
+        }
+
+        .photo-card__img.error-fallback {
+            object-fit: contain;
+            padding: 20px;
+            background: var(--skeleton-bg);
+            opacity: 0.7;
+        }
+
+        .photo-card__info {
+            padding: 16px 16px 18px;
+            flex: 1;
+        }
+
+        .photo-card__title {
+            font-size: 1.1rem;
+            font-weight: 530;
+            margin-bottom: 4px;
+        }
+
+        .photo-card__desc {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        /* 空状态提示 */
+        .empty-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--light-text);
+            font-size: 1.1rem;
+        }
+
+        .empty-message__icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        /* ========== 灯箱 ========== */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.94);
+            display: none;
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(12px);
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .lightbox.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox__content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(0.95);
+            transition: transform var(--transition-normal);
+            touch-action: none;
+        }
+
+        .lightbox.active .lightbox__content {
+            transform: scale(1);
+        }
+
+        .lightbox__img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-lightbox);
+            background: #1a1a1a;
+            opacity: 0;
+            transition: opacity var(--transition-normal), transform 0.1s ease-out;
+            cursor: grab;
+            user-select: none;
+            transform-origin: center center;
+        }
+
+        .lightbox__img.loaded {
+            opacity: 1;
+        }
+
+        .lightbox__img.dragging {
+            cursor: grabbing;
+            transition: none;
+        }
+
+        .lightbox__caption {
+            margin-top: 20px;
+            color: #eee;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .lightbox__title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .lightbox__desc {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .lightbox__counter {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .lightbox__tips {
+            margin-top: 4px;
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        /* 灯箱按钮 */
+        .lightbox__btn {
+            position: absolute;
+            background: rgba(30,30,30,0.7);
+            border: none;
+            color: white;
+            font-size: 36px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-fast);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.15);
+            outline: none;
+        }
+
+        .lightbox__btn:hover,
+        .lightbox__btn:focus-visible {
+            background: rgba(80,80,80,0.8);
+        }
+
+        .lightbox__btn--prev {
+            left: 20px;
+        }
+
+        .lightbox__btn--next {
+            right: 20px;
+        }
+
+        .lightbox__btn--close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            background: rgba(20,20,20,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            color: white;
+            font-size: 32px;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-fast);
+            z-index: 20;
+            outline: none;
+        }
+
+        .lightbox__btn--close:hover,
+        .lightbox__btn--close:focus-visible {
+            background: rgba(220,20,60,0.8);
+        }
+
+        /* 重置视图按钮 - 左下角固定，不遮挡文字 */
+        .lightbox__btn--reset {
+            position: absolute;
+            left: 20px;
+            bottom: 24px;
+            width: auto;
+            height: 36px;
+            padding: 0 16px;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            background: rgba(30,30,30,0.7);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-fast);
+            z-index: 10;
+            top: auto;
+            transform: none;
+        }
+
+        .lightbox__btn--reset:hover {
+            background: rgba(80,80,80,0.8);
+        }
+
+        /* ========== 页脚 ========== */
+        .footer {
+            text-align: center;
+            padding: 50px var(--gap-sm) 20px;
+            color: var(--light-text);
+            font-size: 0.85rem;
+        }
+
+        /* ========== 响应式优化 - 固定数值，媒体查询不支持CSS变量 ========== */
+        @media (max-width: 600px) {
+            .filter-bar {
+                border-radius: 30px;
+                padding: 12px 12px;
+            }
+            .filter-btn {
+                font-size: 0.8rem;
+                padding: 5px 14px;
+            }
+            .photo-count {
+                width: 100%;
+                text-align: center;
+                margin-left: 0;
+            }
+            .photo-card__img-wrapper {
+                height: 260px;
+            }
+            .theme-toggle {
+                position: relative;
+                top: auto;
+                right: auto;
+                transform: none;
+                margin: 16px auto 0;
+            }
+            .lightbox__btn {
+                width: 44px;
+                height: 44px;
+                font-size: 30px;
+            }
+            .lightbox__btn--prev { left: 8px; }
+            .lightbox__btn--next { right: 8px; }
+            .lightbox__btn--close {
+                top: 16px;
+                right: 16px;
+                width: 40px;
+                height: 40px;
+                font-size: 28px;
+            }
+            .lightbox__btn--reset {
+                left: 8px;
+                bottom: 16px;
+                font-size: 0.8rem;
+                padding: 0 12px;
+                height: 32px;
+            }
+            .gallery-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .lightbox__btn {
+                width: 44px;
+                height: 44px;
+                font-size: 30px;
+            }
+            .lightbox__btn--prev { left: 8px; }
+            .lightbox__btn--next { right: 8px; }
+            .lightbox__btn--close {
+                top: 16px;
+                right: 16px;
+                width: 40px;
+                height: 40px;
+                font-size: 28px;
+            }
+            .gallery-container {
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1 class="header__title">📷 光影切片</h1>
+        <p class="header__desc">用镜头收藏日常的诗意与偶然</p>
+        <button class="theme-toggle" id="themeToggle" aria-label="切换深色/浅色模式">🌞</button>
+    </header>
+
+    <div class="filter-section">
+        <div class="filter-bar" id="filterBar"></div>
+    </div>
+
+    <main class="gallery-container" id="gallery"></main>
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+        <button class="lightbox__btn--close" aria-label="关闭灯箱">×</button>
+        <button class="lightbox__btn lightbox__btn--prev" aria-label="上一张照片">‹</button>
+        <button class="lightbox__btn lightbox__btn--next" aria-label="下一张照片">›</button>
+        <button class="lightbox__btn--reset" id="resetTransformBtn" aria-label="重置图片缩放和位置">🔄 重置视图</button>
+        <div class="lightbox__content">
+            <img class="lightbox__img" id="lightboxImg" src="" alt="" loading="lazy">
+            <div class="lightbox__caption">
+                <h4 class="lightbox__title" id="lightboxTitle"></h4>
+                <p class="lightbox__desc" id="lightboxDesc"></p>
+                <div class="lightbox__counter" id="lightboxCounter"></div>
+                <div class="lightbox__tips">滚轮缩放 | 拖拽平移 | 方向键切换 | ESC关闭</div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        © 2026 我的摄影作品集 · 轻按即赏
+    </footer>
+
+    <script>
+        (function() {
+            "use strict";
+
+            // ========== 配置常量 ==========
+            const CONFIG = {
+                ERROR_PLACEHOLDER: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect width=\'400\' height=\'300\' fill=\'%23f2f2f2\'/%3E%3Ctext x=\'30\' y=\'160\' font-family=\'system-ui, sans-serif\' font-size=\'16\' fill=\'%23999\'%3E📷 图片加载失败%3C/text%3E%3C/svg%3E',
+                LIGHTBOX_ERROR_PLACEHOLDER: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%231a1a1a\'/%3E%3Ctext x=\'100\' y=\'220\' font-family=\'system-ui\' font-size=\'22\' fill=\'%23aaa\'%3E⚠️ 无法加载大图%3C/text%3E%3C/svg%3E',
+                SUPPORTED_IMAGE_TYPES: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg', 'avif'],
+                EMPTY_MESSAGE: '✨ 这个分类还没有照片，试试其他主题吧',
+                DEFAULT_FILTER: 'ALL',
+                STORAGE_PREFIX: 'photo_gallery_',
+                FILTER_KEY: 'selected_filter',
+                THEME_KEY: 'selected_theme',
+                LAZY_LOAD_ROOT_MARGIN: '200px 0px',
+                LAZY_LOAD_THRESHOLD: 0.01,
+                MIN_SCALE: 1,
+                MAX_SCALE: 5,
+                SCALE_STEP: 0.1,
+                DEFAULT_THEME: 'auto',
+                SUPPORTED_THEMES: ['light', 'dark', 'auto']
+            };
+
+            // ========== 照片数据 ==========
+            const photos = [
+                { src: "../photo/3月15日(1).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+                { src: "../photo/3月15日(3).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+                { src: "../photo/3月15日(5).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+                { src: "../photo/3月15日.jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+                { src: "../photo/DSC00441.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC01179.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC01204.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC01208.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC01829.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC01831.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC02745.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC02762.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC02767.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+                { src: "../photo/DSC02786.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC02788.jpg", title: "器材记录", desc: "摄影器材随拍" },
+                { src: "../photo/DSC02790.jpg", title: "器材记录", desc: "摄影器材随拍" },
+                { src: "../photo/DSC03417.jpg", title: "人文随拍", desc: "日常纪实记录" },
+                { src: "../photo/DSC03424.jpg", title: "人文随拍", desc: "日常纪实记录" },
+                { src: "../photo/DSC03552_1.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+                { src: "../photo/DSC03555.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC03561.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+                { src: "../photo/DSC03563.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+                { src: "../photo/DSC03586.jpg", title: "人文随拍", desc: "日常纪实记录" },
+                { src: "../photo/DSC03600.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC03616.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC03659.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+                { src: "../photo/DSC03681_1.jpg", title: "烟花摄影", desc: "夜景烟花记录" },
+                { src: "../photo/DSC03684.jpg", title: "烟花摄影", desc: "夜景烟花记录" },
+                { src: "../photo/DSC03710.jpg", title: "星空摄影", desc: "夜景星空记录" },
+                { src: "../photo/DSC03850.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+                { src: "../photo/DSC03852.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+                { src: "../photo/DSC03862_1.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+                { src: "../photo/DSC04000.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+                { src: "../photo/DSC04001.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+                { src: "../photo/DSC04016.jpg", title: "交通纪实", desc: "列车纪实拍摄" },
+                { src: "../photo/DSC04018_1.jpg", title: "风光摄影", desc: "山野风光记录" },
+                { src: "../photo/DSC04023.jpg", title: "风光摄影", desc: "草坪风光记录" },
+                { src: "../photo/DSC04064.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+                { src: "../photo/DSC04076_1.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+                { src: "../photo/DSC04092.jpg", title: "风光摄影", desc: "湖面风光记录" },
+                { src: "../photo/DSC04263.jpg", title: "人文纪实", desc: "日常人文记录" },
+                { src: "../photo/DSC04353(1).jpg", title: "风光摄影", desc: "湖面日落记录" },
+                { src: "../photo/DSC04374.jpg", title: "风光摄影", desc: "湖面日落记录" },
+                { src: "../photo/DSC04376.jpg", title: "风光摄影", desc: "湖面日落记录" },
+                { src: "../photo/DSC04386(1).jpg", title: "风光摄影", desc: "原野风光记录" },
+                { src: "../photo/DSC04664.jpg", title: "建筑摄影", desc: "校园风光记录" },
+                { src: "../photo/DSC04682.jpg", title: "建筑摄影", desc: "校园风光记录" },
+                { src: "../photo/DSC04696.jpg", title: "建筑摄影", desc: "红旗风光记录" },
+                { src: "../photo/DSC04698.jpg", title: "建筑摄影", desc: "红旗风光记录" },
+                { src: "../photo/DSC08377.jpg", title: "器材记录", desc: "摄影器材随拍" },
+                { src: "../photo/DSC08378.jpg", title: "器材记录", desc: "摄影器材随拍" },
+                { src: "../photo/DSC08486(1).jpg", title: "人文纪实", desc: "城市剪影记录" },
+                { src: "../photo/DSC08606.jpg", title: "风光摄影", desc: "越野车辆随拍" },
+                { src: "../photo/DSC08661.jpg", title: "植物摄影", desc: "春日植物记录" },
+                { src: "../photo/DSC08692_1.jpg", title: "风光摄影", desc: "晚霞风光记录" },
+                { src: "../photo/MVIMG_20251113_082524.jpg", title: "蓝天", desc: "2025年11月13日的早八" }
+            ];
+
+            // ========== DOM 元素缓存 ==========
+            const elements = {
+                gallery: document.getElementById('gallery'),
+                filterBar: document.getElementById('filterBar'),
+                lightbox: document.getElementById('lightbox'),
+                lightboxImg: document.getElementById('lightboxImg'),
+                lightboxTitle: document.getElementById('lightboxTitle'),
+                lightboxDesc: document.getElementById('lightboxDesc'),
+                lightboxCounter: document.getElementById('lightboxCounter'),
+                lightboxCloseBtn: document.querySelector('.lightbox__btn--close'),
+                lightboxPrevBtn: document.querySelector('.lightbox__btn--prev'),
+                lightboxNextBtn: document.querySelector('.lightbox__btn--next'),
+                resetTransformBtn: document.getElementById('resetTransformBtn'),
+                themeToggle: document.getElementById('themeToggle'),
+                htmlRoot: document.documentElement
+            };
+
+            // ========== 状态管理 ==========
+            const state = {
+                currentFilter: CONFIG.DEFAULT_FILTER,
+                filteredPhotos: [...photos],
+                currentLightboxIndex: 0,
+                currentTheme: CONFIG.DEFAULT_THEME,
+                systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+                lightboxTransform: {
+                    scale: 1,
+                    offsetX: 0,
+                    offsetY: 0,
+                    isDragging: false,
+                    startX: 0,
+                    startY: 0,
+                    initialX: 0,
+                    initialY: 0
+                },
+                lazyObserver: null
+            };
+
+            // ========== 工具函数 ==========
+            const validateImageType = (src) => {
+                if (!src) return false;
+                const fileExt = src.split('.').pop().toLowerCase().split('?')[0];
+                return CONFIG.SUPPORTED_IMAGE_TYPES.includes(fileExt);
+            };
+
+            const handleImageError = (img, fallback = CONFIG.ERROR_PLACEHOLDER) => {
+                if (img.dataset.errorHandled) return;
+                img.dataset.errorHandled = 'true';
+                const src = img.src || img.dataset.src;
+                if (!validateImageType(src)) {
+                    console.warn(`不支持的文件类型: ${src}`);
+                    img.alt = '不支持该文件类型，请尝试其他文件';
+                }
+                img.src = fallback;
+                img.classList.add('error-fallback');
+            };
+
+            const preloadImage = (src) => {
+                if (!validateImageType(src)) return null;
+                const img = new Image();
+                img.src = src;
+                return img;
+            };
+
+            const setStorage = (key, value) => {
+                try {
+                    localStorage.setItem(CONFIG.STORAGE_PREFIX + key, JSON.stringify(value));
+                } catch (e) {
+                    console.warn('本地存储失败:', e);
+                }
+            };
+
+            const getStorage = (key, defaultValue) => {
+                try {
+                    const value = localStorage.getItem(CONFIG.STORAGE_PREFIX + key);
+                    return value ? JSON.parse(value) : defaultValue;
+                } catch (e) {
+                    console.warn('读取本地存储失败:', e);
+                    return defaultValue;
+                }
+            };
+
+            const setTheme = (theme) => {
+                if (!CONFIG.SUPPORTED_THEMES.includes(theme)) theme = CONFIG.DEFAULT_THEME;
+                state.currentTheme = theme;
+                const effectiveTheme = theme === 'auto' ? state.systemTheme : theme;
+                elements.htmlRoot.setAttribute('data-theme', effectiveTheme);
+                elements.themeToggle.textContent = effectiveTheme === 'dark' ? '🌙' : '🌞';
+                elements.themeToggle.setAttribute('aria-label', `当前为${effectiveTheme === 'dark' ? '深色' : '浅色'}模式，点击切换`);
+                setStorage(CONFIG.THEME_KEY, theme);
+            };
+
+            const updateLightboxTransform = () => {
+                const { scale, offsetX, offsetY } = state.lightboxTransform;
+                elements.lightboxImg.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+            };
+
+            const resetLightboxTransform = () => {
+                state.lightboxTransform = {
+                    scale: 1,
+                    offsetX: 0,
+                    offsetY: 0,
+                    isDragging: false,
+                    startX: 0,
+                    startY: 0,
+                    initialX: 0,
+                    initialY: 0
+                };
+                updateLightboxTransform();
+            };
+
+            const initLazyLoad = () => {
+                if (!('IntersectionObserver' in window)) {
+                    document.querySelectorAll('.photo-card__img[data-src]').forEach(img => {
+                        img.src = img.dataset.src;
+                    });
+                    return;
+                }
+                if (state.lazyObserver) state.lazyObserver.disconnect();
+                state.lazyObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (!validateImageType(img.dataset.src)) {
+                                handleImageError(img);
+                                state.lazyObserver.unobserve(img);
+                                return;
+                            }
+                            img.src = img.dataset.src;
+                            img.addEventListener('load', () => {
+                                img.classList.add('loaded');
+                                img.previousElementSibling?.remove();
+                            }, { once: true });
+                            img.addEventListener('error', () => handleImageError(img), { once: true });
+                            state.lazyObserver.unobserve(img);
+                        }
+                    });
+                }, {
+                    rootMargin: CONFIG.LAZY_LOAD_ROOT_MARGIN,
+                    threshold: CONFIG.LAZY_LOAD_THRESHOLD
+                });
+                document.querySelectorAll('.photo-card__img[data-src]').forEach(img => {
+                    state.lazyObserver.observe(img);
+                });
+            };
+
+            // ========== 渲染函数 ==========
+            const updatePhotoCount = () => {
+                const countSpan = document.getElementById('photoCountDisplay');
+                if (countSpan) countSpan.textContent = `${state.filteredPhotos.length} 张作品`;
+            };
+
+            const renderFilterButtons = () => {
+                const uniqueTitles = Array.from(new Set(photos.map(p => p.title)))
+                    .sort((a, b) => a.localeCompare(b, 'zh-CN'));
+                const fragment = document.createDocumentFragment();
+
+                const allBtn = document.createElement('button');
+                allBtn.className = 'filter-btn';
+                allBtn.dataset.filter = CONFIG.DEFAULT_FILTER;
+                allBtn.textContent = '全部';
+                allBtn.setAttribute('aria-pressed', 'false');
+                if (state.currentFilter === CONFIG.DEFAULT_FILTER) {
+                    allBtn.classList.add('active');
+                    allBtn.setAttribute('aria-pressed', 'true');
+                }
+                fragment.appendChild(allBtn);
+
+                uniqueTitles.forEach(title => {
+                    const btn = document.createElement('button');
+                    btn.className = 'filter-btn';
+                    btn.dataset.filter = title;
+                    btn.textContent = title;
+                    btn.setAttribute('aria-pressed', 'false');
+                    if (state.currentFilter === title) {
+                        btn.classList.add('active');
+                        btn.setAttribute('aria-pressed', 'true');
+                    }
+                    fragment.appendChild(btn);
+                });
+
+                const countEl = document.createElement('span');
+                countEl.className = 'photo-count';
+                countEl.id = 'photoCountDisplay';
+                countEl.textContent = `${photos.length} 张作品`;
+                fragment.appendChild(countEl);
+
+                elements.filterBar.innerHTML = '';
+                elements.filterBar.appendChild(fragment);
+
+                elements.filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', handleFilterClick);
+                    btn.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === 'Space') {
+                            e.preventDefault();
+                            handleFilterClick.call(btn, e);
+                        }
+                    });
+                });
+            };
+
+            const renderGallery = () => {
+                if (!elements.gallery) return;
+                if (state.filteredPhotos.length === 0) {
+                    elements.gallery.innerHTML = `
+                        <div class="empty-message">
+                            <div class="empty-message__icon">📁</div>
+                            <p>${CONFIG.EMPTY_MESSAGE}</p>
+                        </div>
+                    `;
+                    updatePhotoCount();
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+                state.filteredPhotos.forEach((photo, idx) => {
+                    const card = document.createElement('div');
+                    card.className = 'photo-card';
+                    card.dataset.index = idx;
+                    card.tabIndex = 0;
+                    card.setAttribute('aria-label', `${photo.title} - ${photo.desc}`);
+
+                    const imgWrapper = document.createElement('div');
+                    imgWrapper.className = 'photo-card__img-wrapper';
+                    const skeleton = document.createElement('div');
+                    skeleton.className = 'photo-card__skeleton';
+                    imgWrapper.appendChild(skeleton);
+
+                    const img = document.createElement('img');
+                    img.className = 'photo-card__img';
+                    img.dataset.src = photo.src;
+                    img.alt = photo.title;
+                    img.loading = 'lazy';
+                    imgWrapper.appendChild(img);
+                    card.appendChild(imgWrapper);
+
+                    const info = document.createElement('div');
+                    info.className = 'photo-card__info';
+                    const title = document.createElement('h3');
+                    title.className = 'photo-card__title';
+                    title.textContent = photo.title;
+                    const desc = document.createElement('p');
+                    desc.className = 'photo-card__desc';
+                    desc.textContent = photo.desc;
+                    info.append(title, desc);
+                    card.appendChild(info);
+
+                    card.addEventListener('click', () => openLightbox(idx));
+                    card.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === 'Space') {
+                            e.preventDefault();
+                            openLightbox(idx);
+                        }
+                    });
+                    fragment.appendChild(card);
+                });
+
+                elements.gallery.innerHTML = '';
+                elements.gallery.appendChild(fragment);
+                initLazyLoad();
+                updatePhotoCount();
+            };
+
+            // ========== 交互处理函数 ==========
+            function handleFilterClick(e) {
+                const filterValue = this.dataset.filter;
+                elements.filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                });
+                this.classList.add('active');
+                this.setAttribute('aria-pressed', 'true');
+
+                state.currentFilter = filterValue;
+                state.filteredPhotos = filterValue === CONFIG.DEFAULT_FILTER
+                    ? [...photos]
+                    : photos.filter(p => p.title === filterValue);
+
+                setStorage(CONFIG.FILTER_KEY, filterValue);
+                renderGallery();
+
+                if (elements.lightbox.classList.contains('active')) {
+                    const currentPhotoSrc = elements.lightboxImg.src;
+                    const photoInFilter = state.filteredPhotos.some(p => p.src === currentPhotoSrc);
+                    if (!photoInFilter) {
+                        closeLightbox();
+                    } else {
+                        state.currentLightboxIndex = state.filteredPhotos.findIndex(p => p.src === currentPhotoSrc);
+                        updateLightboxContent(state.currentLightboxIndex);
+                    }
+                }
+            }
+
+            const updateLightboxContent = (index) => {
+                if (!state.filteredPhotos.length || index < 0 || index >= state.filteredPhotos.length) return;
+                const photo = state.filteredPhotos[index];
+                resetLightboxTransform();
+
+                if (!validateImageType(photo.src)) {
+                    elements.lightboxImg.src = CONFIG.LIGHTBOX_ERROR_PLACEHOLDER;
+                    elements.lightboxTitle.textContent = '不支持该文件类型';
+                    elements.lightboxDesc.textContent = '请尝试其他文件';
+                    elements.lightboxCounter.textContent = `${index + 1} / ${state.filteredPhotos.length}`;
+                    return;
+                }
+
+                elements.lightboxImg.src = photo.src;
+                elements.lightboxImg.alt = photo.title;
+                elements.lightboxTitle.textContent = photo.title;
+                elements.lightboxDesc.textContent = photo.desc;
+                elements.lightboxCounter.textContent = `${index + 1} / ${state.filteredPhotos.length}`;
+
+                elements.lightboxImg.classList.remove('loaded');
+                elements.lightboxImg.removeAttribute('data-error-handled');
+                elements.lightboxImg.addEventListener('load', () => {
+                    elements.lightboxImg.classList.add('loaded');
+                }, { once: true });
+                elements.lightboxImg.addEventListener('error', () => {
+                    handleImageError(elements.lightboxImg, CONFIG.LIGHTBOX_ERROR_PLACEHOLDER);
+                }, { once: true });
+
+                const nextIndex = (index + 1) % state.filteredPhotos.length;
+                const prevIndex = (index - 1 + state.filteredPhotos.length) % state.filteredPhotos.length;
+                preloadImage(state.filteredPhotos[nextIndex].src);
+                preloadImage(state.filteredPhotos[prevIndex].src);
+            };
+
+            const openLightbox = (index) => {
+                if (!state.filteredPhotos.length) return;
+                state.currentLightboxIndex = index;
+                updateLightboxContent(index);
+                elements.lightbox.classList.add('active');
+                elements.lightbox.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                elements.lightboxCloseBtn.focus();
+            };
+
+            const closeLightbox = () => {
+                elements.lightbox.classList.remove('active');
+                elements.lightbox.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                resetLightboxTransform();
+            };
+
+            const showPrevImage = () => {
+                if (!state.filteredPhotos.length) return;
+                state.currentLightboxIndex = (state.currentLightboxIndex - 1 + state.filteredPhotos.length) % state.filteredPhotos.length;
+                updateLightboxContent(state.currentLightboxIndex);
+            };
+
+            const showNextImage = () => {
+                if (!state.filteredPhotos.length) return;
+                state.currentLightboxIndex = (state.currentLightboxIndex + 1) % state.filteredPhotos.length;
+                updateLightboxContent(state.currentLightboxIndex);
+            };
+
+            const handleThemeToggle = () => {
+                const themeMap = { 'light': 'dark', 'dark': 'auto', 'auto': 'light' };
+                const newTheme = themeMap[state.currentTheme];
+                setTheme(newTheme);
+            };
+
+            // ========== 事件绑定 ==========
+            const bindEvents = () => {
+                // 主题切换
+                elements.themeToggle.addEventListener('click', handleThemeToggle);
+                elements.themeToggle.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === 'Space') {
+                        e.preventDefault();
+                        handleThemeToggle();
+                    }
+                });
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                    state.systemTheme = e.matches ? 'dark' : 'light';
+                    if (state.currentTheme === 'auto') setTheme('auto');
+                });
+
+                // 灯箱基础操作
+                elements.lightboxCloseBtn.addEventListener('click', closeLightbox);
+                elements.lightbox.addEventListener('click', (e) => {
+                    if (e.target === elements.lightbox) closeLightbox();
+                });
+                elements.lightboxPrevBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showPrevImage();
+                });
+                elements.lightboxNextBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showNextImage();
+                });
+                elements.resetTransformBtn.addEventListener('click', resetLightboxTransform);
+
+                // 图片拖拽
+                elements.lightboxImg.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    const transform = state.lightboxTransform;
+                    transform.isDragging = true;
+                    transform.startX = e.clientX;
+                    transform.startY = e.clientY;
+                    transform.initialX = transform.offsetX;
+                    transform.initialY = transform.offsetY;
+                    elements.lightboxImg.classList.add('dragging');
+                });
+                document.addEventListener('mousemove', (e) => {
+                    const transform = state.lightboxTransform;
+                    if (!transform.isDragging) return;
+                    const deltaX = e.clientX - transform.startX;
+                    const deltaY = e.clientY - transform.startY;
+                    transform.offsetX = transform.initialX + deltaX;
+                    transform.offsetY = transform.initialY + deltaY;
+                    updateLightboxTransform();
+                });
+                document.addEventListener('mouseup', () => {
+                    const transform = state.lightboxTransform;
+                    if (transform.isDragging) {
+                        transform.isDragging = false;
+                        elements.lightboxImg.classList.remove('dragging');
+                    }
+                });
+                document.addEventListener('mouseleave', () => {
+                    const transform = state.lightboxTransform;
+                    if (transform.isDragging) {
+                        transform.isDragging = false;
+                        elements.lightboxImg.classList.remove('dragging');
+                    }
+                });
+
+                // 滚轮缩放 - 鼠标位置精准缩放
+                elements.lightboxImg.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const transform = state.lightboxTransform;
+                    const rect = elements.lightboxImg.getBoundingClientRect();
+                    
+                    const delta = e.deltaY > 0 ? -CONFIG.SCALE_STEP : CONFIG.SCALE_STEP;
+                    const oldScale = transform.scale;
+                    const newScale = Math.max(CONFIG.MIN_SCALE, Math.min(CONFIG.MAX_SCALE, oldScale + delta));
+                    
+                    if (newScale === oldScale) return;
+                    
+                    const mouseX = e.clientX - rect.left;
+                    const mouseY = e.clientY - rect.top;
+                    const scaleRatio = newScale / oldScale;
+                    
+                    transform.offsetX = mouseX - (mouseX - transform.offsetX) * scaleRatio;
+                    transform.offsetY = mouseY - (mouseY - transform.offsetY) * scaleRatio;
+                    transform.scale = newScale;
+                    
+                    updateLightboxTransform();
+                }, { passive: false });
+
+                // 键盘导航
+                document.addEventListener('keydown', (e) => {
+                    const isLightboxActive = elements.lightbox.classList.contains('active');
+                    if (isLightboxActive) {
+                        switch (e.key) {
+                            case 'Escape':
+                                closeLightbox();
+                                break;
+                            case 'ArrowLeft':
+                                e.preventDefault();
+                                showPrevImage();
+                                break;
+                            case 'ArrowRight':
+                                e.preventDefault();
+                                showNextImage();
+                                break;
+                            case 'Tab':
+                                const lightboxElements = [
+                                    elements.lightboxCloseBtn,
+                                    elements.resetTransformBtn,
+                                    elements.lightboxPrevBtn,
+                                    elements.lightboxNextBtn
+                                ];
+                                const currentFocus = document.activeElement;
+                                const currentIndex = lightboxElements.indexOf(currentFocus);
+                                if (e.shiftKey && currentIndex === 0) {
+                                    e.preventDefault();
+                                    lightboxElements[lightboxElements.length - 1].focus();
+                                } else if (!e.shiftKey && currentIndex === lightboxElements.length - 1) {
+                                    e.preventDefault();
+                                    lightboxElements[0].focus();
+                                }
+                                break;
+                        }
+                    }
+                });
+
+                // 窗口大小变化
+                window.addEventListener('resize', () => {
+                    if (!elements.lightbox.classList.contains('active')) {
+                        renderGallery();
+                    } else {
+                        resetLightboxTransform();
+                    }
+                }, { passive: true });
+            };
+
+            // ========== 初始化 ==========
+            const init = () => {
+                Object.values(elements).forEach(el => {
+                    if (!el) console.warn('缺少必要的DOM元素');
+                });
+                state.currentFilter = getStorage(CONFIG.FILTER_KEY, CONFIG.DEFAULT_FILTER);
+                state.currentTheme = getStorage(CONFIG.THEME_KEY, CONFIG.DEFAULT_THEME);
+                state.filteredPhotos = state.currentFilter === CONFIG.DEFAULT_FILTER
+                    ? [...photos]
+                    : photos.filter(p => p.title === state.currentFilter);
+                setTheme(state.currentTheme);
+                renderFilterButtons();
+                renderGallery();
+                bindEvents();
+            };
+
+            init();
+        })();
+    </script>
+</body>
+</html>
