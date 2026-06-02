@@ -457,7 +457,8 @@
             const titlesSet = new Set(photos.map(p => p.title));
             const uniqueTitles = Array.from(titlesSet).sort((a, b) => a.localeCompare(b, 'zh-CN'));
             
-            let buttonsHtml = `<button class="filter-btn active" data-filter="ALL">全部</button>`;
+            let buttonsHtml = `<a href="../index.html" class="filter-btn" style="text-decoration: none; display: inline-block;">🏠 返回</a>`;
+            buttonsHtml += `<button class="filter-btn active" data-filter="ALL">全部</button>`;
             uniqueTitles.forEach(title => {
                 buttonsHtml += `<button class="filter-btn" data-filter="${title}">${title}</button>`;
             });
@@ -465,11 +466,11 @@
             
             filterBar.innerHTML = buttonsHtml;
             
-            filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+            filterBar.querySelectorAll('button.filter-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const filterValue = btn.dataset.filter;
                     
-                    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    filterBar.querySelectorAll('button.filter-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     
                     currentFilter = filterValue;

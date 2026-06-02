@@ -521,6 +521,7 @@
             uniqueTitles.forEach(title => {
                 buttonsHtml += `<button class="filter-btn" data-filter="${title}">${title}</button>`;
             });
+            buttonsHtml += `<a href="graduation/index.html" class="filter-btn" style="text-decoration: none; display: inline-block;">🎓 毕业纪念</a>`;
             buttonsHtml += `<span class="photo-count" id="photoCountDisplay">${photos.length} 张作品</span>`;
             
             filterBar.innerHTML = buttonsHtml;
