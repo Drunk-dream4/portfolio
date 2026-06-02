@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" type="image/png" href="../icons8-照片栈-80.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>毕业纪念 · 2026届</title>
+    <style>
+        :root {
+            --bg-color: #f8f8f8;
+            --text-color: #222222;
+            --light-text: #666666;
+            --accent-color: #333333;
+            --white: #ffffff;
+            --gap: 20px;
+            --border-radius: 8px;
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-hover: 0 12px 28px rgba(0,0,0,0.12);
+            --transition: all 0.25s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 40px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--light-text);
+        }
+
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--gap);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--gap);
+        }
+
+        .photo-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+            background: #eaeaea;
+            transition: opacity 0.3s;
+        }
+
+        .photo-card img.error-fallback {
+            object-fit: contain;
+            padding: 20px;
+            background: #f0f0f0;
+            opacity: 0.7;
+        }
+
+        .photo-info {
+            padding: 16px 16px 18px;
+            flex: 1;
+        }
+
+        .photo-info h3 {
+            font-size: 1.1rem;
+            font-weight: 530;
+            margin-bottom: 4px;
+        }
+
+        .photo-info p {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        #lightbox {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.94);
+            display: none;
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        #lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #lightbox-img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #1a1a1a;
+        }
+
+        .lightbox-caption {
+            margin-top: 16px;
+            color: #eee;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .lightbox-caption h4 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .lightbox-caption p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .lightbox-counter {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .lightbox-btn {
+            position: absolute;
+            background: rgba(30,30,30,0.7);
+            border: none;
+            color: white;
+            font-size: 36px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: background 0.2s;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .lightbox-btn:hover {
+            background: rgba(80,80,80,0.8);
+        }
+
+        #lightbox-prev {
+            left: 20px;
+        }
+
+        #lightbox-next {
+            right: 20px;
+        }
+
+        #lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            background: rgba(20,20,20,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            color: white;
+            font-size: 32px;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+            z-index: 20;
+        }
+
+        #lightbox-close:hover {
+            background: rgba(220,20,60,0.8);
+        }
+
+        @media (max-width: 768px) {
+            .lightbox-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 30px;
+            }
+            #lightbox-prev { left: 8px; }
+            #lightbox-next { right: 8px; }
+            #lightbox-close {
+                top: 16px; right: 16px;
+                width: 40px; height: 40px;
+                font-size: 28px;
+            }
+            .photo-card img { height: 260px; }
+        }
+
+        footer {
+            text-align: center;
+            padding: 50px 20px 20px;
+            color: var(--light-text);
+            font-size: 0.85rem;
+        }
+
+        .photo-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            padding: 0 8px;
+        }
+
+        .filter-section {
+            max-width: 1400px;
+            margin: 0 auto 20px;
+            padding: 0 var(--gap);
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 12px;
+            background: var(--white);
+            padding: 14px 20px;
+            border-radius: 48px;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(4px);
+            background: rgba(255,255,255,0.9);
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid #ddd;
+            color: var(--light-text);
+            font-size: 0.9rem;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 450;
+            transition: var(--transition);
+            backdrop-filter: blur(2px);
+            background: rgba(255,255,255,0.6);
+        }
+
+        .filter-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 600px) {
+            .filter-bar {
+                border-radius: 30px;
+                padding: 12px 12px;
+            }
+            .filter-btn {
+                font-size: 0.8rem;
+                padding: 5px 14px;
+            }
+            .photo-count {
+                width: 100%;
+                text-align: center;
+                margin-left: 0;
+            }
+        }
+
+        .visually-hidden {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>毕业纪念</h1>
+    <p>2026年6月3日 · 青春不散场</p>
+</header>
+
+<div class="filter-section">
+    <div class="filter-bar" id="filterBar"></div>
+</div>
+
+<main class="gallery-container" id="gallery"></main>
+
+<div id="lightbox">
+    <button id="lightbox-close" aria-label="关闭">×</button>
+    <button class="lightbox-btn" id="lightbox-prev" aria-label="上一张">‹</button>
+    <button class="lightbox-btn" id="lightbox-next" aria-label="下一张">›</button>
+    <div class="lightbox-content">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption">
+            <h4 id="lightbox-title"></h4>
+            <p id="lightbox-desc"></p>
+            <div class="lightbox-counter" id="lightbox-counter"></div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    © 2026 毕业纪念 · 定格青春
+</footer>
+
+<script>
+    (function(){
+        "use strict";
+
+        const photos = [
+            { src: "photo/DSC08274.jpg", title: "毕业留念", desc: "2026年6月" },
+            { src: "photo/DSC08277.jpg", title: "毕业留念", desc: "2026年6月" },
+            { src: "photo/DSC08291.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08294.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08295.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08317.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08318.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08320.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08322.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08323.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08324.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08331.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08335.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08336.jpg", title: "校园风景", desc: "2026年6月" },
+            { src: "photo/DSC08337.jpg", title: "毕业合影", desc: "2026年6月3日" },
+            { src: "photo/DSC08338.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08339.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08342.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08344.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08346.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08348.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08349.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08355.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08356.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08357.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08360.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08361.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08362.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08363.jpg", title: "精彩瞬间", desc: "2026年6月" },
+            { src: "photo/DSC08364.jpg", title: "精彩瞬间", desc: "2026年6月" }
+        ];
+
+        const galleryEl = document.getElementById('gallery');
+        const filterBar = document.getElementById('filterBar');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxTitle = document.getElementById('lightbox-title');
+        const lightboxDesc = document.getElementById('lightbox-desc');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        const closeBtn = document.getElementById('lightbox-close');
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
+
+        let currentFilter = 'ALL';
+        let filteredPhotos = [...photos];
+        let currentLightboxIndex = 0;
+
+        function handleImageError(img) {
+            img.onerror = null;
+            img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect width=\'400\' height=\'300\' fill=\'%23f2f2f2\'/%3E%3Ctext x=\'30\' y=\'160\' font-family=\'system-ui, sans-serif\' font-size=\'16\' fill=\'%23999\'%3E📷 图片加载失败%3C/text%3E%3C/svg%3E';
+            img.classList.add('error-fallback');
+            img.alt = '图片暂时无法显示';
+        }
+
+        function renderGallery() {
+            if (!galleryEl) return;
+            
+            if (filteredPhotos.length === 0) {
+                galleryEl.innerHTML = `<div class="empty-message">✨ 暂无照片</div>`;
+                updatePhotoCount();
+                return;
+            }
+
+            let html = '';
+            filteredPhotos.forEach((photo, idx) => {
+                html += `
+                    <div class="photo-card" data-index="${idx}">
+                        <img src="${photo.src}" alt="${photo.title}" loading="lazy" onerror="handleImageError(this)">
+                        <div class="photo-info">
+                            <h3>${photo.title}</h3>
+                            <p>${photo.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            galleryEl.innerHTML = html;
+            
+            galleryEl.querySelectorAll('.photo-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const index = card.dataset.index;
+                    if (index !== undefined) {
+                        openLightbox(parseInt(index, 10));
+                    }
+                });
+            });
+            
+            updatePhotoCount();
+        }
+
+        function updatePhotoCount() {
+            const countSpan = document.getElementById('photoCountDisplay');
+            if (countSpan) {
+                countSpan.textContent = `${filteredPhotos.length} 张照片`;
+            }
+        }
+
+        function renderFilterButtons() {
+            const titlesSet = new Set(photos.map(p => p.title));
+            const uniqueTitles = Array.from(titlesSet).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+            
+            let buttonsHtml = `<button class="filter-btn active" data-filter="ALL">全部</button>`;
+            uniqueTitles.forEach(title => {
+                buttonsHtml += `<button class="filter-btn" data-filter="${title}">${title}</button>`;
+            });
+            buttonsHtml += `<span class="photo-count" id="photoCountDisplay">${photos.length} 张照片</span>`;
+            
+            filterBar.innerHTML = buttonsHtml;
+            
+            filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filterValue = btn.dataset.filter;
+                    
+                    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    currentFilter = filterValue;
+                    
+                    if (filterValue === 'ALL') {
+                        filteredPhotos = [...photos];
+                    } else {
+                        filteredPhotos = photos.filter(p => p.title === filterValue);
+                    }
+                    
+                    renderGallery();
+                    
+                    if (lightbox.classList.contains('active')) {
+                        const currentPhotoInFilter = filteredPhotos.some(p => p.src === lightboxImg.src);
+                        if (!currentPhotoInFilter) {
+                            closeLightbox();
+                        } else {
+                            const newIndex = filteredPhotos.findIndex(p => p.src === lightboxImg.src);
+                            if (newIndex !== -1) currentLightboxIndex = newIndex;
+                            updateLightboxContent(currentLightboxIndex);
+                        }
+                    }
+                });
+            });
+        }
+
+        function openLightbox(index) {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = index;
+            updateLightboxContent(index);
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxContent(index) {
+            if (!filteredPhotos.length || index < 0 || index >= filteredPhotos.length) return;
+            const photo = filteredPhotos[index];
+            lightboxImg.src = photo.src;
+            lightboxImg.alt = photo.title;
+            lightboxTitle.textContent = photo.title;
+            lightboxDesc.textContent = photo.desc;
+            lightboxCounter.textContent = `${index + 1} / ${filteredPhotos.length}`;
+            
+            lightboxImg.onerror = () => {
+                lightboxImg.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%231a1a1a\'/%3E%3Ctext x=\'100\' y=\'220\' font-family=\'system-ui\' font-size=\'22\' fill=\'%23aaa\'%3E⚠️ 无法加载大图%3C/text%3E%3C/svg%3E';
+                lightboxTitle.textContent = '图片缺失';
+                lightboxDesc.textContent = '请检查文件路径';
+            };
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function showPrevImage() {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = (currentLightboxIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+            updateLightboxContent(currentLightboxIndex);
+        }
+
+        function showNextImage() {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = (currentLightboxIndex + 1) % filteredPhotos.length;
+            updateLightboxContent(currentLightboxIndex);
+        }
+
+        function bindEvents() {
+            closeBtn.addEventListener('click', closeLightbox);
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) closeLightbox();
+            });
+            
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showPrevImage();
+            });
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showNextImage();
+            });
+            
+            document.addEventListener('keydown', (e) => {
+                if (!lightbox.classList.contains('active')) return;
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    showNextImage();
+                }
+            });
+        }
+
+        window.handleImageError = handleImageError;
+
+        function init() {
+            filteredPhotos = [...photos];
+            renderFilterButtons();
+            renderGallery();
+            bindEvents();
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
