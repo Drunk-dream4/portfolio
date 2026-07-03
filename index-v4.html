@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <link rel="icon" type="image/png" href="icons8-照片栈-80.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>光影集 · 摄影作品</title>
+    <style>
+        /* ========== 全局主题配置 ========== */
+        :root {
+            --bg-color: #f8f8f8;
+            --text-color: #222222;
+            --light-text: #666666;
+            --accent-color: #333333;
+            --white: #ffffff;
+            --gap: 20px;
+            --border-radius: 8px;
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-hover: 0 12px 28px rgba(0,0,0,0.12);
+            --transition: all 0.25s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding-bottom: 40px;
+        }
+
+        /* ========== 头部 ========== */
+        header {
+            text-align: center;
+            padding: 60px 20px 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: var(--light-text);
+        }
+
+        /* ========== 分类筛选栏 (新增优化) ========== */
+        .filter-section {
+            max-width: 1400px;
+            margin: 0 auto 20px;
+            padding: 0 var(--gap);
+        }
+
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px 12px;
+            background: var(--white);
+            padding: 14px 20px;
+            border-radius: 48px;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(4px);
+            background: rgba(255,255,255,0.9);
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid #ddd;
+            color: var(--light-text);
+            font-size: 0.9rem;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 450;
+            transition: var(--transition);
+            backdrop-filter: blur(2px);
+            background: rgba(255,255,255,0.6);
+        }
+
+        .filter-btn:hover {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .photo-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            padding: 0 8px;
+        }
+
+        @media (max-width: 600px) {
+            .filter-bar {
+                border-radius: 30px;
+                padding: 12px 12px;
+            }
+            .filter-btn {
+                font-size: 0.8rem;
+                padding: 5px 14px;
+            }
+            .photo-count {
+                width: 100%;
+                text-align: center;
+                margin-left: 0;
+            }
+        }
+
+        /* ========== 照片网格 ========== */
+        .gallery-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--gap);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--gap);
+        }
+
+        .photo-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+            background: #eaeaea;
+            transition: opacity 0.3s;
+            /* 懒加载自带 loading="lazy" (JS生成) */
+        }
+
+        /* 图片加载失败时的样式 */
+        .photo-card img.error-fallback {
+            object-fit: contain;
+            padding: 20px;
+            background: #f0f0f0;
+            opacity: 0.7;
+        }
+
+        .photo-info {
+            padding: 16px 16px 18px;
+            flex: 1;
+        }
+
+        .photo-info h3 {
+            font-size: 1.1rem;
+            font-weight: 530;
+            margin-bottom: 4px;
+        }
+
+        .photo-info p {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        /* 空状态提示 */
+        .empty-message {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--light-text);
+            font-size: 1.1rem;
+        }
+
+        /* ========== 灯箱 (增强版) ========== */
+        #lightbox {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.94);
+            display: none;
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        #lightbox.active {
+            display: flex;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #lightbox-img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: #1a1a1a;
+        }
+
+        .lightbox-caption {
+            margin-top: 16px;
+            color: #eee;
+            text-align: center;
+            padding: 0 10px;
+        }
+
+        .lightbox-caption h4 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .lightbox-caption p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .lightbox-counter {
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        /* 灯箱按钮 */
+        .lightbox-btn {
+            position: absolute;
+            background: rgba(30,30,30,0.7);
+            border: none;
+            color: white;
+            font-size: 36px;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: background 0.2s;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .lightbox-btn:hover {
+            background: rgba(80,80,80,0.8);
+        }
+
+        #lightbox-prev {
+            left: 20px;
+        }
+
+        #lightbox-next {
+            right: 20px;
+        }
+
+        #lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            background: rgba(20,20,20,0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            color: white;
+            font-size: 32px;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s;
+            z-index: 20;
+        }
+
+        #lightbox-close:hover {
+            background: rgba(220,20,60,0.8);
+        }
+
+        @media (max-width: 768px) {
+            .lightbox-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 30px;
+            }
+            #lightbox-prev { left: 8px; }
+            #lightbox-next { right: 8px; }
+            #lightbox-close {
+                top: 16px; right: 16px;
+                width: 40px; height: 40px;
+                font-size: 28px;
+            }
+            .photo-card img { height: 260px; }
+        }
+
+        /* ========== 页脚 ========== */
+        footer {
+            text-align: center;
+            padding: 50px 20px 20px;
+            color: var(--light-text);
+            font-size: 0.85rem;
+        }
+
+        /* 简单工具类 */
+        .visually-hidden {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>📷 光影切片</h1>
+    <p>用镜头收藏日常的诗意与偶然</p>
+</header>
+
+<!-- 分类筛选栏 (优化新增) -->
+<div class="filter-section">
+    <div class="filter-bar" id="filterBar">
+        <!-- 动态生成分类按钮 & 计数 -->
+    </div>
+</div>
+
+<!-- 照片网格容器 -->
+<main class="gallery-container" id="gallery"></main>
+
+<!-- 增强型灯箱 -->
+<div id="lightbox">
+    <button id="lightbox-close" aria-label="关闭">×</button>
+    <button class="lightbox-btn" id="lightbox-prev" aria-label="上一张">‹</button>
+    <button class="lightbox-btn" id="lightbox-next" aria-label="下一张">›</button>
+    <div class="lightbox-content">
+        <img id="lightbox-img" src="" alt="">
+        <div class="lightbox-caption">
+            <h4 id="lightbox-title"></h4>
+            <p id="lightbox-desc"></p>
+            <div class="lightbox-counter" id="lightbox-counter"></div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    © 2026 我的摄影作品集 · 轻按即赏
+</footer>
+
+<script>
+    (function(){
+        "use strict";
+
+        // ---------- 📸 照片数据 (您唯一需要修改的地方，可继续增删) ----------
+        const photos = [
+            { src: "photo/3月15日(1).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+            { src: "photo/3月15日(3).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+            { src: "photo/3月15日(5).jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+            { src: "photo/3月15日.jpg", title: "春日随拍", desc: "3月15日拍摄记录" },
+            { src: "photo/DSC00441.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC01179.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC01204.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC01208.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC01829.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC01831.jpg", title: "建筑摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC02745.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC02762.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC02767.jpg", title: "风光摄影", desc: "纪实风光随拍" },
+            { src: "photo/DSC02786.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC02788.jpg", title: "器材记录", desc: "摄影器材随拍" },
+            { src: "photo/DSC02790.jpg", title: "器材记录", desc: "摄影器材随拍" },
+            { src: "photo/DSC03417.jpg", title: "人文随拍", desc: "日常纪实记录" },
+            { src: "photo/DSC03424.jpg", title: "人文随拍", desc: "日常纪实记录" },
+            { src: "photo/DSC03552_1.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+            { src: "photo/DSC03555.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC03561.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+            { src: "photo/DSC03563.jpg", title: "花卉摄影", desc: "创意花卉拍摄" },
+            { src: "photo/DSC03586.jpg", title: "人文随拍", desc: "日常纪实记录" },
+            { src: "photo/DSC03600.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC03616.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC03659.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+            { src: "photo/DSC03681_1.jpg", title: "烟花摄影", desc: "夜景烟花记录" },
+            { src: "photo/DSC03684.jpg", title: "烟花摄影", desc: "夜景烟花记录" },
+            { src: "photo/DSC03710.jpg", title: "星空摄影", desc: "夜景星空记录" },
+            { src: "photo/DSC03850.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+            { src: "photo/DSC03852.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+            { src: "photo/DSC03862_1.jpg", title: "日落摄影", desc: "黄昏日落记录" },
+            { src: "photo/DSC04000.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+            { src: "photo/DSC04001.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+            { src: "photo/DSC04016.jpg", title: "交通纪实", desc: "列车纪实拍摄" },
+            { src: "photo/DSC04018_1.jpg", title: "风光摄影", desc: "山野风光记录" },
+            { src: "photo/DSC04023.jpg", title: "风光摄影", desc: "草坪风光记录" },
+            { src: "photo/DSC04064.jpg", title: "花卉摄影", desc: "春日花卉记录" },
+            { src: "photo/DSC04076_1.jpg", title: "萌宠记录", desc: "日常萌宠随拍" },
+            { src: "photo/DSC04092.jpg", title: "风光摄影", desc: "湖面风光记录" },
+            { src: "photo/DSC04263.jpg", title: "人文纪实", desc: "日常人文记录" },
+            { src: "photo/DSC04353(1).jpg", title: "风光摄影", desc: "湖面日落记录" },
+            { src: "photo/DSC04374.jpg", title: "风光摄影", desc: "湖面日落记录" },
+            { src: "photo/DSC04376.jpg", title: "风光摄影", desc: "湖面日落记录" },
+            { src: "photo/DSC04386(1).jpg", title: "风光摄影", desc: "原野风光记录" },
+            { src: "photo/DSC04664.jpg", title: "建筑摄影", desc: "校园风光记录" },
+            { src: "photo/DSC04682.jpg", title: "建筑摄影", desc: "校园风光记录" },
+            { src: "photo/DSC04696.jpg", title: "建筑摄影", desc: "红旗风光记录" },
+            { src: "photo/DSC04698.jpg", title: "建筑摄影", desc: "红旗风光记录" },
+            { src: "photo/DSC08377.jpg", title: "器材记录", desc: "摄影器材随拍" },
+            { src: "photo/DSC08378.jpg", title: "器材记录", desc: "摄影器材随拍" },
+            { src: "photo/DSC08486(1).jpg", title: "人文纪实", desc: "城市剪影记录" },
+            { src: "photo/DSC08606.jpg", title: "风光摄影", desc: "越野车辆随拍" },
+            { src: "photo/DSC08661.jpg", title: "植物摄影", desc: "春日植物记录" },
+            { src: "photo/DSC08692_1.jpg", title: "风光摄影", desc: "晚霞风光记录" },
+            { src: "photo/MVIMG_20251113_082524.jpg", title: "蓝天", desc: "2025年11月13日的早八" }
+        ];
+
+        // ---------- DOM 元素 ----------
+        const galleryEl = document.getElementById('gallery');
+        const filterBar = document.getElementById('filterBar');
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        const lightboxTitle = document.getElementById('lightbox-title');
+        const lightboxDesc = document.getElementById('lightbox-desc');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        const closeBtn = document.getElementById('lightbox-close');
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
+
+        // 状态
+        let currentFilter = 'ALL';               // 当前激活的分类标题
+        let filteredPhotos = [...photos];        // 当前显示的照片数组
+        let currentLightboxIndex = 0;            // 当前灯箱索引 (基于filteredPhotos)
+
+        // ---------- 辅助函数：图片加载失败处理 ----------
+        function handleImageError(img) {
+            // 如果图片加载失败，替换为内嵌SVG占位，并添加错误类
+            img.onerror = null; // 避免死循环
+            img.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect width=\'400\' height=\'300\' fill=\'%23f2f2f2\'/%3E%3Ctext x=\'30\' y=\'160\' font-family=\'system-ui, sans-serif\' font-size=\'16\' fill=\'%23999\'%3E📷 图片加载失败%3C/text%3E%3C/svg%3E';
+            img.classList.add('error-fallback');
+            img.alt = '图片暂时无法显示';
+        }
+
+        // ---------- 渲染网格 (基于 filteredPhotos) ----------
+        function renderGallery() {
+            if (!galleryEl) return;
+            
+            if (filteredPhotos.length === 0) {
+                galleryEl.innerHTML = `<div class="empty-message">✨ 这个分类还没有照片，试试其他主题吧</div>`;
+                updatePhotoCount();
+                return;
+            }
+
+            let html = '';
+            filteredPhotos.forEach((photo, idx) => {
+                html += `
+                    <div class="photo-card" data-index="${idx}">
+                        <img src="${photo.src}" alt="${photo.title}" loading="lazy" onerror="handleImageError(this)">
+                        <div class="photo-info">
+                            <h3>${photo.title}</h3>
+                            <p>${photo.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            galleryEl.innerHTML = html;
+            
+            // 绑定卡片点击事件 (委托)
+            galleryEl.querySelectorAll('.photo-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const index = card.dataset.index;
+                    if (index !== undefined) {
+                        openLightbox(parseInt(index, 10));
+                    }
+                });
+            });
+            
+            updatePhotoCount();
+        }
+
+        // 更新照片计数显示
+        function updatePhotoCount() {
+            const countSpan = document.getElementById('photoCountDisplay');
+            if (countSpan) {
+                countSpan.textContent = `${filteredPhotos.length} 张作品`;
+            }
+        }
+
+        // ---------- 生成分类按钮 (基于唯一标题) ----------
+        function renderFilterButtons() {
+            // 提取所有唯一标题，并排序 (中文排序)
+            const titlesSet = new Set(photos.map(p => p.title));
+            const uniqueTitles = Array.from(titlesSet).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+            
+            let buttonsHtml = `<button class="filter-btn active" data-filter="ALL">全部</button>`;
+            uniqueTitles.forEach(title => {
+                buttonsHtml += `<button class="filter-btn" data-filter="${title}">${title}</button>`;
+            });
+            buttonsHtml += `<a href="graduation/index.html" class="filter-btn" style="text-decoration: none; display: inline-block;">🎓 毕业纪念</a>`;
+            buttonsHtml += `<span class="photo-count" id="photoCountDisplay">${photos.length} 张作品</span>`;
+            
+            filterBar.innerHTML = buttonsHtml;
+            
+            // 绑定过滤事件
+            filterBar.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filterValue = btn.dataset.filter;
+                    
+                    // 更新active样式
+                    filterBar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    currentFilter = filterValue;
+                    
+                    // 过滤照片
+                    if (filterValue === 'ALL') {
+                        filteredPhotos = [...photos];
+                    } else {
+                        filteredPhotos = photos.filter(p => p.title === filterValue);
+                    }
+                    
+                    // 重新渲染网格
+                    renderGallery();
+                    
+                    // 如果灯箱打开但当前照片不在新过滤集中，自动关闭灯箱 (避免索引错乱)
+                    if (lightbox.classList.contains('active')) {
+                        const currentPhotoInFilter = filteredPhotos.some(p => p.src === lightboxImg.src);
+                        if (!currentPhotoInFilter) {
+                            closeLightbox();
+                        } else {
+                            // 更新索引 (基于新的filteredPhotos)
+                            const newIndex = filteredPhotos.findIndex(p => p.src === lightboxImg.src);
+                            if (newIndex !== -1) currentLightboxIndex = newIndex;
+                            updateLightboxContent(currentLightboxIndex);
+                        }
+                    }
+                });
+            });
+        }
+
+        // ---------- 灯箱功能 ----------
+        function openLightbox(index) {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = index;
+            updateLightboxContent(index);
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateLightboxContent(index) {
+            if (!filteredPhotos.length || index < 0 || index >= filteredPhotos.length) return;
+            const photo = filteredPhotos[index];
+            lightboxImg.src = photo.src;
+            lightboxImg.alt = photo.title;
+            lightboxTitle.textContent = photo.title;
+            lightboxDesc.textContent = photo.desc;
+            lightboxCounter.textContent = `${index + 1} / ${filteredPhotos.length}`;
+            
+            // 处理灯箱内图片加载失败
+            lightboxImg.onerror = () => {
+                lightboxImg.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'400\' viewBox=\'0 0 600 400\'%3E%3Crect width=\'600\' height=\'400\' fill=\'%231a1a1a\'/%3E%3Ctext x=\'100\' y=\'220\' font-family=\'system-ui\' font-size=\'22\' fill=\'%23aaa\'%3E⚠️ 无法加载大图%3C/text%3E%3C/svg%3E';
+                lightboxTitle.textContent = '图片缺失';
+                lightboxDesc.textContent = '请检查文件路径';
+            };
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function showPrevImage() {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = (currentLightboxIndex - 1 + filteredPhotos.length) % filteredPhotos.length;
+            updateLightboxContent(currentLightboxIndex);
+        }
+
+        function showNextImage() {
+            if (!filteredPhotos.length) return;
+            currentLightboxIndex = (currentLightboxIndex + 1) % filteredPhotos.length;
+            updateLightboxContent(currentLightboxIndex);
+        }
+
+        // ---------- 事件绑定 ----------
+        function bindEvents() {
+            // 关闭灯箱
+            closeBtn.addEventListener('click', closeLightbox);
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox) closeLightbox();
+            });
+            
+            // 导航按钮
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showPrevImage();
+            });
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showNextImage();
+            });
+            
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (!lightbox.classList.contains('active')) return;
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    showNextImage();
+                }
+            });
+        }
+
+        // 将handleImageError挂载到window以便内联调用
+        window.handleImageError = handleImageError;
+
+        // ---------- 初始化 ----------
+        function init() {
+            filteredPhotos = [...photos];
+            renderFilterButtons();
+            renderGallery();
+            bindEvents();
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
